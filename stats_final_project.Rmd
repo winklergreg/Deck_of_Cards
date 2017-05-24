@@ -1,0 +1,140 @@
+---
+title: "Analyzing a Deck of Cards"
+author: "Greg Winkler"
+date: "5/23/2017"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(plyr)
+
+deckOfCards <- data.frame(card_value = c(1,1,1,1,
+                    2,2,2,2,
+                    3,3,3,3,
+                    4,4,4,4,
+                    5,5,5,5,
+                    6,6,6,6,
+                    7,7,7,7,
+                    8,8,8,8,
+                    9,9,9,9,
+                    10,10,10,10,
+                    10,10,10,10,
+                    10,10,10,10,
+                    10,10,10,10))
+
+card_draws <- data.frame(c(6,10,5),
+                   c(8,10,10),
+                   c(5,10,10),
+                   c(10,10,5),
+                   c(5,4,10),
+                   c(2,1,1),
+                   c(1,7,10),
+                   c(10,10,7),
+                   c(8,10,6),
+                   c(10,10,1),
+                   c(1,10,10),
+                   c(10,5,5),
+                   c(8,6,10),
+                   c(10,9,10),
+                   c(4,5,6),
+                   c(10,6,10),
+                   c(10,10,1),
+                   c(10,1,4),
+                   c(10,10,10),
+                   c(3,10,1),
+                   c(7,10,2),
+                   c(2,10,6),
+                   c(2,4,4),
+                   c(1,4,8),
+                   c(9,10,9),
+                   c(5,7,2),
+                   c(4,6,2),
+                   c(10,6,4),
+                   c(9,1,10),
+                   c(7,10,3))
+
+```
+
+
+```{r DeckOfCards, echo=FALSE}
+
+ggplot(data = deckOfCards, aes(x = card_value)) + 
+  geom_bar() +
+  scale_x_continuous(breaks = seq(1,10,1)) +
+  ggtitle("Frequency of Each Card")
+
+```
+
+For the above frequencies, an Ace has a value of 1 and picture cards have a value
+of 10.
+
+```{r, echo=FALSE}
+
+meanOfDeck <- mean(deckOfCards$card_value)
+medianOfDeck <- median(deckOfCards$card_value)
+
+varOfCard <- (deckOfCards$card_value - mean(deckOfCards$card_value))^2
+varOfDeck <- mean(varOfCard)
+stdOfDeck <- sqrt(mean(varOfDeck))
+
+sprintf("The mean is: %s", round(meanOfDeck, digits = 2))
+sprintf("The median is: %s", round(medianOfDeck, digits = 2))
+sprintf("The standard deviation is: %s", round(stdOfDeck, digits = 2))
+
+```
+
+```{r echo=FALSE}
+
+draw_sums <- as.data.frame((colSums(card_draws)))
+
+draw_sums <- as.data.frame((colSums(card_draws)))
+draw_sums <- rename(draw_sums, c("(colSums(card_draws))"="Sums"))
+
+varOfDraws <- (draw_sums$Sums - mean(draw_sums$Sums))^2
+varOfSample <- sum(varOfDraws) / 29
+stdOfSample <- sqrt(varOfSample)
+
+ggplot(data = draw_sums, aes(x = Sums)) +
+  geom_histogram(binwidth = 3) +
+  scale_x_continuous(breaks = seq(3,30,3)) +
+  ggtitle("Distribution for the Sum of Random 3 Card Draws")
+
+```
+
+The distribution of sample draws takes on a normal distribution that is different 
+from the shape of the original data.  This is to be expected as it conforms to 
+the Central Limit Theorem (CLT).  Also from the CLT we would expect the mean of 
+all samples from the population to be approximately equal to the mean of the 
+population.  As shown below, the mean of the samples is only slightly higher at 
+6.68 (20.03 / 3) versus the actual population of 6.54.
+
+```{r echo=FALSE}
+
+sprintf("The mean of sample sums is: %s", round(mean(draw_sums$Sums), digits = 2))
+sprintf("The median of sample sums is: %s", 
+        round(median(draw_sums$Sums), digits = 2))
+sprintf("The variance is: %s", round(varOfSample, digits = 2))
+sprintf("The standard deviation is: %s", round(stdOfSample, digits = 2))
+sprintf("The range of sample sums is: %s", 
+        round(max(draw_sums) - min(draw_sums), digits = 2))
+
+sprintf("The interquartile range is: %s",
+        round(quantile(draw_sums$Sums)[4] - quantile(draw_sums$Sums)[2], 2))
+
+```
+
+Based on the Central Limit Theorem, it would be expected that each 3 card draw in 
+the future would sum to just under 20.  Further, we can expect that 90% of the 
+future draws have a sum that is +/- 10.05 from the mean of the deck, (i.e. between 
+9.98 and 30.08).  The value of 10.05 is derived by multiplying the standard 
+error by 1.645. Note that 30.08 is actually above the maximum possible score of
+30.
+
+If we wanted to know the probability of getting a value of at least 20, we would 
+first find that this value is approximately 0.06 standard deviations from the 
+mean ((20-20.03) / 6.11). This results in a probabiliy of 50.2% that the sum
+will be at least 20.
